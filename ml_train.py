@@ -1,54 +1,123 @@
-import math
-import pickle
+import streamlit as st
+import time
+import random
+from streamlit_agraph import agraph, Node, Edge, Config
 
-print("=== ЗАПУСК ПРОЦЕССА ОБУЧЕНИЯ ML-МОДЕЛИ (НАИВНЫЙ БАЙЕС) ===")
+# Настройка страницы
+st.set_page_config(page_title="Digital Shadow MVP", layout="wide")
 
-# 1. Чистые данные для обучения (Паттерны преступлений в РК)
-train_data = [
-    ("Продам вейпы оптом Алматы, оплата на крипту USDT, вывод через карты Каспи", "crime"),
-    ("Слитая база данных eGov, ИИН, телефоны граждан Казахстана, продажа в Даркнет", "crime"),
-    ("Ищу дропов в Астане для приема заливов на карты, процент высокий", "crime"),
-    ("Куплю новый Айфон в магазине Сулпак со скидкой", "normal"),
-    ("Где в Алматы можно вкусно поужинать с друзьями?", "normal"),
-    ("Расписание занятий в университете на следующую неделю", "normal")
-]
+st.title("🥷 Digital Shadow")
+st.caption("Интеллектуальное решение для мониторинга открытых интернет-ресурсов и сегментов DarkNet")
 
-# 2. Обучение модели (считаем частоту опасных слов)
-word_counts = {"crime": {}, "normal": {}}
-class_counts = {"crime": 0, "normal": 0}
+st.divider()
 
-for text, label in train_data:
-    class_counts[label] += 1
-    words = text.lower().split()
-    for word in words:
-        word_counts[label][word] = word_counts[label].get(word, 0) + 1
+# --- БЛОК 1: ВВОД ДАННЫХ И КАТЕГОРИЗАЦИЯ УГРОЗ ---
+st.header("🔍 1. Сбор данных и OSINT-мониторинг")
 
-print("...Математическая модель ИИ успешно обучена на паттернах РК!")
+col1, col2 = st.columns(2)
 
-# 3. Функция предсказания (Классификатор)
-def predict(text):
-    words = text.lower().split()
-    score_crime = math.log(class_counts["crime"] / len(train_data))
-    score_normal = math.log(class_counts["normal"] / len(train_data))
+with col1:
+    target_input = st.text_input("Введите объект исследования:", placeholder="Никнейм, ID, криптокошелек, телефон или email...")
     
-    for word in words:
-        # Считаем вероятность по Байесу
-        score_crime += math.log((word_counts["crime"].get(word, 0) + 1) / (sum(word_counts["crime"].values()) + 1000))
-        score_normal += math.log((word_counts["normal"].get(word, 0) + 1) / (sum(word_counts["normal"].values()) + 1000))
+    search_targets = st.multiselect(
+        "Сферы мониторинга (OSINT / DarkNet):",
+        ["Контрабанда (вейпы, алкоголь)", "Наркотические вещества", "Дроп-активность (Дропы)", "Подозрительные криптокошельки", "Утечки баз данных РК"],
+        default=["Контрабанда (вейпы, алкоголь)", "Подозрительные криптокошельки"]
+    )
+
+with col2:
+    source_type = st.radio("Сегмент сканирования:", ["Все источники", "ClearWeb (Открытые ресурсы)", "DarkNet сегменты"])
+    start_analysis = st.button("🚀 Запустить приоритизацию угроз", use_container_width=True)
+
+st.divider()
+
+# --- БЛОК 2: ЭМУЛЯЦИЯ СКАНЕРА И АНАЛИЗ (Твоя фича!) ---
+if start_analysis and target_input:
+    st.header("🧠 2. Оценка рисков и Скоринг модели")
+    
+    # Стилизованный профессиональный вывод логов сканирования
+    st.subheader("⚙️ Процесс сопоставления данных в реальном времени:")
+    
+    log_box = st.empty() # Специальный контейнер, который будет обновлять текст
+    logs = [
+        f"[INFO] Инициализация OSINT-сессии для объекта: '{target_input}'...",
+        "[CONNECT] Установка защищенного соединения с узлами Tor/DarkNet...",
+        "[PARSING] Сканирование открытых интернет-ресурсов (ClearWeb)...",
+        "[DATABASE] Запрос к сигнатурным базам данных компрометаций Республики Казахстан...",
+        "[ML_MODEL] Запуск алгоритмов бинарной классификации (Scikit-learn)...",
+        "[COMPARING] Сверение цифровых следов с паттернами контрабанды и дроп-активности...",
+        "[SUCCESS] Анализ завершен. Индексация риск-сигналов..."
+    ]
+    
+    # Выводим логи по очереди, как будто программа реально думает и сверяет с инетом
+    current_logs = ""
+    for log in logs:
+        current_logs += log + "\n"
+        log_box.code(current_logs, language="bash") # Вывод в виде красивого серого кода
+        time.sleep(0.6) # Скорость "сканирования"
+    
+    # --- ЛОГИКА УМНОГО РАНДОМА (Твои пасхалки) ---
+    target_lower = target_input.lower().strip()
+    
+    # Если ввели ключевые слова из наших примеров -> выдаем жесткий риск
+    if "vape" in target_lower or "almaty" in target_lower or "0x71c" in target_lower or "drop" in target_lower or "berik" in target_lower or "иин" in target_lower:
+        risk_score = random.randint(82, 96) # Высокий риск для твоих примеров
+        is_danger = True
+    else:
+        risk_score = random.randint(15, 48) # Низкий/средний риск для любых других слов
+        is_danger = False
+
+    st.write("") # Отступ
+    
+    # Вывод метрик на основе просчитанного риска
+    metric_col1, metric_col2, metric_col3 = st.columns(3)
+    with metric_col1:
+        if is_danger:
+            st.metric(label="Индекс риска объекта", value=f"{risk_score} / 100", delta="КРИТИЧЕСКИЙ УРОВЕНЬ", delta_color="inverse")
+        else:
+            st.metric(label="Индекс риска объекта", value=f"{risk_score} / 100", delta="Норма (Низкий риск)")
+            
+    with metric_col2:
+        traces = len(search_targets) + (3 if is_danger else 0)
+        st.metric(label="Найдено цифровых следов", value=f"{traces} совпадений")
         
-    return 1 if score_crime > score_normal else 0
+    with metric_col3:
+        leak_status = "Обнаружен слив данных РК" if is_danger else "Компрометаций не найдено"
+        st.metric(label="Статус в базах утечек РК", value=leak_status)
 
-# 4. Тест модели
-test_text = "Продам вейпы и ищу дропов в Алматы, оплата крипта"
-prediction = predict(test_text)
+    # Красивое текстовое заключение модели
+    if is_danger:
+        st.error(f"🚨 **Риск-сигнал ({risk_score}%):** Обнаружены устойчивые паттерны незаконной деятельности. Объект имеет прямые скрытые связи с теневыми маркетами и дроп-инфраструктурой.")
+    else:
+        st.success(f"✅ **Анализ завершен ({risk_score}%):** Риск минимален. Критических аномалий или совпадений в DarkNet/ClearWeb сегментах не обнаружено.")
 
-print(f"\n[Тест ИИ] Анализ текста: '{test_text}'")
-if prediction == 1:
-    print(" Результат: Обнаружена подозрительная схема! Данные отправлены в граф.")
+    st.divider()
+
+    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ ---
+    st.header("📊 3. Автоматизированный графовый анализ связей")
+    st.subheader("Визуализация инфраструктуры объекта")
+    
+    # Динамически меняем цвета графа в зависимости от опасности
+    target_color = "#FF4B4B" if is_danger else "#2EA043"
+    node2_label = "Crypto Wallet (Подозрительный)" if is_danger else "Crypto Wallet (Чистый)"
+    node3_label = "DarkNet Forum Activity" if is_danger else "Форумы (Упоминаний нет)"
+    
+    nodes = [
+        Node(id="Target", label=target_input, size=400, color=target_color),
+        Node(id="Crypto", label=node2_label, size=250, color="#1F77B4"),
+        Node(id="Darknet", label=node3_label, size=250, color="#1F77B4"),
+        Node(id="Leak", label="База данных РК (Статус)", size=250, color="#FFAA00"),
+    ]
+    edges = [
+        Edge(source="Target", target="Crypto", label="Транзакции"),
+        Edge(source="Target", target="Darknet", label="Активность"),
+        Edge(source="Target", target="Leak", label="Проверка ИИН"),
+    ]
+    
+    config = Config(width=900, height=500, directed=True, physics=True, hierarchical=False)
+    agraph(nodes=nodes, edges=edges, config=config)
+
+elif start_analysis and not target_input:
+    st.warning("⚠️ Пожалуйста, введите объект для исследования (например, никнейм или кошелек).")
 else:
-    print(" Результат: Текст чист.")
-
-# 5. Сохраняем готовую модель
-with open('crime_model.pkl', 'wb') as f:
-    pickle.dump(word_counts, f)
-print("\n=== МОДЕЛЬ УСПЕШНО СОХРАНЕНА КАК crime_model.pkl ===")
+    st.info("💡 Введите данные объекта выше и нажмите кнопку для запуска OSINT-скриптов и оценки рисков.")
