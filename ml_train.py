@@ -97,102 +97,62 @@ if start_analysis and target_input:
     st.divider()
 
     # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ (ОБНОВЛЕННЫЙ, АККУРАТНЫЙ) ---
+  st.divider()
+
+    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ (ЖЕСТКАЯ НАСТРОЙКА КРАСОТЫ) ---
     st.header("📊 3. Автоматизированный графовый анализ связей")
     st.subheader("Визуализация инфраструктуры объекта")
-    st.write("") # Небольшой отступ
+    st.write("") 
 
-    # Динамически меняем цвета графа в зависимости от опасности
+    # Определяем цвет главного узла
     target_color = "#FF4B4B" if is_danger else "#2EA043"
-    # Для DarkNet-узлов используем более профессиональный синий
-    cyber_color = "#1E90FF"
 
-    # Теперь в label мы пишем только короткое название, а в title - красивый HTML-тултип при наведении
-    # Иконки (эмодзи) - прямо в label, это выглядит аккуратно и понятно
+    # Прописываем всё напрямую в узлы - размер, цвет и понятные подписи с эмодзи
     nodes = [
         Node(
-            id="Target",
-            label="👤 ОБЪЕКТ",
-            size=400,
-            color=target_color,
-            title=f"<b>{target_input}</b><br>Целевой объект исследования<br>Индекс риска: {risk_score}%",
-            shape="dot" # vis.js shape (на всякий случай)
+            id="Target", 
+            label=f"👤 ОБЪЕКТ: {target_input}", 
+            size=30,           # Крупный узел
+            color=target_color
         ),
         Node(
-            id="Crypto",
-            label="💰 КРИПТА",
-            size=250,
-            color=cyber_color,
-            title="<b>Подозрительный криптокошелек</b><br>TRC-20, высокая Drop-активность",
-            shape="dot"
+            id="Crypto", 
+            label="💰 КРИПТОКОШЕЛЕК (Теневой транзит)" if is_danger else "💰 КРИПТОКОШЕЛЕК (Чистый)", 
+            size=20, 
+            color="#1F77B4"
         ),
         Node(
-            id="Darknet",
-            label="🕶️ DARKNET",
-            size=250,
-            color=cyber_color,
-            title="<b>Активность в DarkNet</b><br>Упоминания на теневых форумах и маркетах",
-            shape="dot"
+            id="Darknet", 
+            label="🕶️ DARKNET (Активность на форумах)" if is_danger else "🕶️ DARKNET (Упоминаний нет)", 
+            size=20, 
+            color="#333333"
         ),
         Node(
-            id="Leak",
-            label="📂 УТЕЧКИ РК",
-            size=250,
-            color="#FFAA00" if is_danger else "#aaaaaa", # Оранжевый, если опасность, иначе серый
-            title="<b>Базы данных РК</b><br>Компрометация ИИН/номера телефона",
-            shape="dot"
+            id="Leak", 
+            label="📂 УТЕЧКИ РК (Данные скомпрометированы)" if is_danger else "📂 УТЕЧКИ РК (Все чистые)", 
+            size=20, 
+            color="#FFAA00" if is_danger else "#777777"
         ),
     ]
 
-    # Для связей тоже добавляем всплывающие подсказки (tooltip)
+    # Настройки стрелочек и подписей между узлами
     edges = [
-        Edge(source="Target", target="Crypto", label="Транзакции", title="<b>Взаимодействие:</b> Транзакции<br>Тип: Криптоактивы"),
-        Edge(source="Target", target="Darknet", label="Активность", title="<b>Взаимодействие:</b> Активность<br>Тип: Теневой форум"),
-        Edge(source="Target", target="Leak", label="Утечка ИИН", title="<b>Взаимодействие:</b> Компрометация<br>Тип: База данных РК"),
+        Edge(source="Target", target="Crypto", label="🔗 Транзакции", color="#888888"),
+        Edge(source="Target", target="Darknet", label="🔗 Поиск совпадений", color="#888888"),
+        Edge(source="Target", target="Leak", label="🔗 Проверка ИИН", color="#888888"),
     ]
-
-    # --- МОЩНЫЙ, ОЧИЩЕННЫЙ КОНФИГ ---
+    
+    # Самый простой и надежный конфиг, который точно не сломается
     config = Config(
-        width=1000,           # Сделаем чуть пошире
-        height=600,          # И повыше, чтобы было просторно
-        directed=True,       # Стрелочки (направление связей)
-        physics=True,        # Плавная физика расталкивания
-        hierarchical=False,  # Свободное распределение
-        highlightColor="#F7A7A6" if is_danger else "#D9EBD1", # Цвет подсветки при клике
-        
-        # Ключевые настройки для vis.js (которую использует agraph):
-        # 1. Показываем тултипы при наведении (hover)
-        # 2. Настраиваем рендеринг узлов, чтобы иконки и текст не "страшили"
-        **{
-            "nodes": {
-                "font": {
-                    "face": "Arial",      # Чистый шрифт
-                    "size": 14,          # Оптимальный размер
-                    "color": "#e0e0e0"    # Светлый цвет текста (для темного фона)
-                },
-                "borderWidth": 2,       # Аккуратная обводка
-                "shadow": {"enabled": True, "size": 3, "x": 1, "y": 1}, # Мягкая тень для глубины
-            },
-            "edges": {
-                "color": {"color": "#666666", "highlight": "#ff4b4b"}, # Нейтральные связи, красные при клике
-                "smooth": {"type": "continuous"}, # Плавные, не "ломаные" линии
-                "font": {"size": 11, "color": "#aaaaaa"} # Мелкий, аккуратный текст связей
-            },
-            "interaction": {
-                "hover": True,            # Включить ховер
-                "tooltipDelay": 100,      # Появляется быстро
-                "zoomView": True,         # Разрешить зум
-                "dragView": True          # Разрешить перетаскивание
-            },
-            # Делаем фон темным и чистым
-            "background": "#0e1117"       # Стандартный темный цвет Streamlit
-        }
+        width=950, 
+        height=550, 
+        directed=True,   # Четкие стрелочки направления
+        physics=True,    # Чтобы узлы плавно пружинили и не слипались
+        hierarchical=False
     )
-
-    # Отрисовка графа (теперь он точно не "страшный")
-    st.write("<div style='border: 1px solid #333; border-radius: 8px; padding: 10px; background-color: #0e1117;'>", unsafe_allow_html=True)
+    
+    # Отрисовка
     agraph(nodes=nodes, edges=edges, config=config)
-    st.write("</div>", unsafe_allow_html=True)
-
 elif start_analysis and not target_input:
     st.warning("⚠️ Пожалуйста, введите объект для исследования (например, никнейм или кошелек).")
 else:
