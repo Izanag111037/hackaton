@@ -94,28 +94,104 @@ if start_analysis and target_input:
     st.divider()
 
     # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ ---
+    st.divider()
+
+    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ (ОБНОВЛЕННЫЙ, АККУРАТНЫЙ) ---
     st.header("📊 3. Автоматизированный графовый анализ связей")
     st.subheader("Визуализация инфраструктуры объекта")
-    
+    st.write("") # Небольшой отступ
+
     # Динамически меняем цвета графа в зависимости от опасности
     target_color = "#FF4B4B" if is_danger else "#2EA043"
-    node2_label = "Crypto Wallet (Подозрительный)" if is_danger else "Crypto Wallet (Чистый)"
-    node3_label = "DarkNet Forum Activity" if is_danger else "Форумы (Упоминаний нет)"
-    
+    # Для DarkNet-узлов используем более профессиональный синий
+    cyber_color = "#1E90FF"
+
+    # Теперь в label мы пишем только короткое название, а в title - красивый HTML-тултип при наведении
+    # Иконки (эмодзи) - прямо в label, это выглядит аккуратно и понятно
     nodes = [
-        Node(id="Target", label=target_input, size=400, color=target_color),
-        Node(id="Crypto", label=node2_label, size=250, color="#1F77B4"),
-        Node(id="Darknet", label=node3_label, size=250, color="#1F77B4"),
-        Node(id="Leak", label="База данных РК (Статус)", size=250, color="#FFAA00"),
+        Node(
+            id="Target",
+            label="👤 ОБЪЕКТ",
+            size=400,
+            color=target_color,
+            title=f"<b>{target_input}</b><br>Целевой объект исследования<br>Индекс риска: {risk_score}%",
+            shape="dot" # vis.js shape (на всякий случай)
+        ),
+        Node(
+            id="Crypto",
+            label="💰 КРИПТА",
+            size=250,
+            color=cyber_color,
+            title="<b>Подозрительный криптокошелек</b><br>TRC-20, высокая Drop-активность",
+            shape="dot"
+        ),
+        Node(
+            id="Darknet",
+            label="🕶️ DARKNET",
+            size=250,
+            color=cyber_color,
+            title="<b>Активность в DarkNet</b><br>Упоминания на теневых форумах и маркетах",
+            shape="dot"
+        ),
+        Node(
+            id="Leak",
+            label="📂 УТЕЧКИ РК",
+            size=250,
+            color="#FFAA00" if is_danger else "#aaaaaa", # Оранжевый, если опасность, иначе серый
+            title="<b>Базы данных РК</b><br>Компрометация ИИН/номера телефона",
+            shape="dot"
+        ),
     ]
+
+    # Для связей тоже добавляем всплывающие подсказки (tooltip)
     edges = [
-        Edge(source="Target", target="Crypto", label="Транзакции"),
-        Edge(source="Target", target="Darknet", label="Активность"),
-        Edge(source="Target", target="Leak", label="Проверка ИИН"),
+        Edge(source="Target", target="Crypto", label="Транзакции", title="<b>Взаимодействие:</b> Транзакции<br>Тип: Криптоактивы"),
+        Edge(source="Target", target="Darknet", label="Активность", title="<b>Взаимодействие:</b> Активность<br>Тип: Теневой форум"),
+        Edge(source="Target", target="Leak", label="Утечка ИИН", title="<b>Взаимодействие:</b> Компрометация<br>Тип: База данных РК"),
     ]
-    
-    config = Config(width=900, height=500, directed=True, physics=True, hierarchical=False)
+
+    # --- МОЩНЫЙ, ОЧИЩЕННЫЙ КОНФИГ ---
+    config = Config(
+        width=1000,           # Сделаем чуть пошире
+        height=600,          # И повыше, чтобы было просторно
+        directed=True,       # Стрелочки (направление связей)
+        physics=True,        # Плавная физика расталкивания
+        hierarchical=False,  # Свободное распределение
+        highlightColor="#F7A7A6" if is_danger else "#D9EBD1", # Цвет подсветки при клике
+        
+        # Ключевые настройки для vis.js (которую использует agraph):
+        # 1. Показываем тултипы при наведении (hover)
+        # 2. Настраиваем рендеринг узлов, чтобы иконки и текст не "страшили"
+        **{
+            "nodes": {
+                "font": {
+                    "face": "Arial",      # Чистый шрифт
+                    "size": 14,          # Оптимальный размер
+                    "color": "#e0e0e0"    # Светлый цвет текста (для темного фона)
+                },
+                "borderWidth": 2,       # Аккуратная обводка
+                "shadow": {"enabled": True, "size": 3, "x": 1, "y": 1}, # Мягкая тень для глубины
+            },
+            "edges": {
+                "color": {"color": "#666666", "highlight": "#ff4b4b"}, # Нейтральные связи, красные при клике
+                "smooth": {"type": "continuous"}, # Плавные, не "ломаные" линии
+                "font": {"size": 11, "color": "#aaaaaa"} # Мелкий, аккуратный текст связей
+            },
+            "interaction": {
+                "hover": True,            # Включить ховер
+                "tooltipDelay": 100,      # Появляется быстро
+                "zoomView": True,         # Разрешить зум
+                "dragView": True          # Разрешить перетаскивание
+            },
+            # Делаем фон темным и чистым
+            "background": "#0e1117"       # Стандартный темный цвет Streamlit
+        }
+    )
+
+    # Отрисовка графа (теперь он точно не "страшный")
+    st.write("<div style='border: 1px solid #333; border-radius: 8px; padding: 10px; background-color: #0e1117;'>", unsafe_allow_html=True)
     agraph(nodes=nodes, edges=edges, config=config)
+    st.write("</div>", unsafe_allow_html=True)
 
 elif start_analysis and not target_input:
     st.warning("⚠️ Пожалуйста, введите объект для исследования (например, никнейм или кошелек).")
