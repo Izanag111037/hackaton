@@ -1,10 +1,20 @@
 import streamlit as st
 import time
 import random
-from streamlit_agraph import agraph, Node, Edge, Config
+from pyvis.network import Network
+import streamlit.components.v1 as components
 
 # Настройка страницы
-st.set_page_config(page_title="Digital Shadow MVP", layout="wide")
+st.set_page_config(page_title="Digital Shadow MVP", layout="wide", initial_sidebar_state="collapsed")
+
+# Добавим CSS для темного фона, чтобы граф не выбивался
+st.markdown("""
+    <style>
+        .stApp { background-color: #0e1117; color: white; }
+        .stDivider { border-color: #333; }
+        .stTitle, .stHeader, .stSubheader, .stCaption { color: white; }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("🥷 Digital Shadow")
 st.caption("Интеллектуальное решение для мониторинга открытых интернет-ресурсов и сегментов DarkNet")
@@ -54,7 +64,7 @@ if start_analysis and target_input:
     for log in logs:
         current_logs += log + "\n"
         log_box.code(current_logs, language="bash") # Вывод в виде красивого серого кода
-        time.sleep(0.6) # Скорость "сканирования"
+        time.sleep(0.4) # Ускорим "сканирование" для демонстрации
     
     # --- ЛОГИКА УМНОГО РАНДОМА (Твои пасхалки) ---
     target_lower = target_input.lower().strip()
@@ -93,66 +103,59 @@ if start_analysis and target_input:
 
     st.divider()
 
-    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ ---
-    st.divider()
-
-    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ (ОБНОВЛЕННЫЙ, АККУРАТНЫЙ) ---
-  st.divider()
-
-    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ (ЖЕСТКАЯ НАСТРОЙКА КРАСОТЫ) ---
+    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ (ОБНОВЛЕННЫЙ, КРАСИВЫЙ С PYVIS) ---
     st.header("📊 3. Автоматизированный графовый анализ связей")
     st.subheader("Визуализация инфраструктуры объекта")
     st.write("") 
 
-    # Определяем цвет главного узла
-    target_color = "#FF4B4B" if is_danger else "#2EA043"
-
-    # Прописываем всё напрямую в узлы - размер, цвет и понятные подписи с эмодзи
-    nodes = [
-        Node(
-            id="Target", 
-            label=f"👤 ОБЪЕКТ: {target_input}", 
-            size=30,           # Крупный узел
-            color=target_color
-        ),
-        Node(
-            id="Crypto", 
-            label="💰 КРИПТОКОШЕЛЕК (Теневой транзит)" if is_danger else "💰 КРИПТОКОШЕЛЕК (Чистый)", 
-            size=20, 
-            color="#1F77B4"
-        ),
-        Node(
-            id="Darknet", 
-            label="🕶️ DARKNET (Активность на форумах)" if is_danger else "🕶️ DARKNET (Упоминаний нет)", 
-            size=20, 
-            color="#333333"
-        ),
-        Node(
-            id="Leak", 
-            label="📂 УТЕЧКИ РК (Данные скомпрометированы)" if is_danger else "📂 УТЕЧКИ РК (Все чистые)", 
-            size=20, 
-            color="#FFAA00" if is_danger else "#777777"
-        ),
-    ]
-
-    # Настройки стрелочек и подписей между узлами
-    edges = [
-        Edge(source="Target", target="Crypto", label="🔗 Транзакции", color="#888888"),
-        Edge(source="Target", target="Darknet", label="🔗 Поиск совпадений", color="#888888"),
-        Edge(source="Target", target="Leak", label="🔗 Проверка ИИН", color="#888888"),
-    ]
+    # Создаем красивую кибер-тему для Pyvis
+    got_net = Network(height="600px", width="1000px", bgcolor="#0e1117", font_color="#e0e0e0", directed=True, notebook=False)
     
-    # Самый простой и надежный конфиг, который точно не сломается
-    config = Config(
-        width=950, 
-        height=550, 
-        directed=True,   # Четкие стрелочки направления
-        physics=True,    # Чтобы узлы плавно пружинили и не слипались
-        hierarchical=False
-    )
+    # --- ОПРЕДЕЛЯЕМ ИКОНКИ И ЦВЕТА УЗЛОВ (ЗДЕСЬ ВСЯ КРАСОТА!) ---
+    # Шрифт FontAwesome захардкожен в label как эмодзи, это работает 100%
+    target_icon = "👤"
+    cyber_icon = "🌐"
+    crypto_icon = "💰"
+    darknet_icon = "🕶️"
+    leak_icon = "📂"
+
+    # Основные кибер-цвета
+    danger_color = "#FF4B4B" # Грозный красный
+    safe_color = "#2EA043"   # Чистый зеленый
+    cyber_color = "#1E90FF" # Насыщенный синий для цифровых следов
+    leak_color = "#FFAA00"   # Оранжевый для утечек РК
+
+    # Динамически меняем цвета графа в зависимости от опасности
+    main_node_color = danger_color if is_danger else safe_color
+    node4_color = leak_color if is_danger else "#777777" # Серый, если нет утечек
+
+    # --- ДОБАВЛЯЕМ УЗЛЫ НАПРЯМУЮ С ПОНЯТНЫМИ LABEL И ИКОНКАМИ ---
+    # Вlabel зашиваем иконку, тип и конкретное имя, чтобы жюри все видело
+    got_net.add_node(1, label=f"{target_icon} ОБЪЕКТ: {target_input}", color=main_node_color, size=35)
     
-    # Отрисовка
-    agraph(nodes=nodes, edges=edges, config=config)
+    crypto_status = "(Теневой транзит)" if is_danger else "(Чистый)"
+    got_net.add_node(2, label=f"{crypto_icon} КРИПТОКОШЕЛЕК {crypto_status}", color=cyber_color, size=25)
+    
+    darknet_status = "(Активность)" if is_danger else "(Упоминаний нет)"
+    got_net.add_node(3, label=f"{darknet_icon} DARKNET {darknet_status}", color=cyber_color, size=25)
+    
+    leak_status = "(Скомпрометированы)" if is_danger else "(Чистые)"
+    got_net.add_node(4, label=f"{leak_icon} УТЕЧКИ РК {leak_status}", color=node4_color, size=25)
+
+    # --- ДОБАВЛЯЕМ СВЯЗИ ( edges ) ---
+    got_net.add_edge(1, 2, label="🔗 Транзакции", color="#888888")
+    got_net.add_edge(1, 3, label="🔗 Поиск совпадений", color="#888888")
+    got_net.add_edge(1, 4, label="🔗 Проверка ИИН", color="#888888")
+
+    # Включаем физику, чтобы узлы плавно пружинили и не слипались
+    got_net.show_buttons(filter_=['physics'])
+    
+    # Генерируем HTML-код графа
+    html_data = got_net.generate_html()
+    
+    # Встраиваем HTML-граф прямо в Streamlit
+    components.html(html_data, height=650)
+
 elif start_analysis and not target_input:
     st.warning("⚠️ Пожалуйста, введите объект для исследования (например, никнейм или кошелек).")
 else:
