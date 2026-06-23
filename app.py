@@ -1,75 +1,82 @@
 import streamlit as st
+import time
 from streamlit_agraph import agraph, Node, Edge, Config
 
-# Настройки страницы в хакерском/кибер-стиле
-st.set_page_config(page_title="Digital Shadow — Мониторинг Схем", layout="wide")
-st.title("🛡️ Digital Shadow")
-st.subheader("Интеллектуальный мониторинг и выявление схем интернет-преступлений в РК")
+# Настройка страницы
+st.set_page_config(page_title="Digital Shadow MVP", layout="wide")
 
-# Вводные данные для демонстрации
-st.markdown("### 🔍 Мониторинг открытых источников и DarkNet сегмента")
-selected_case = st.selectbox(
-    "Выберите зафиксированный инцидент для анализа схемы:",
-    ["Кейс #104: Сеть контрабанды вейпов и вывод через дроп-карты (Алматы)", 
-     "Кейс #105: Утечка базы данных госорганов РК и продажа в DarkNet"]
-)
+st.title("🥷 Digital Shadow")
+st.caption("Интеллектуальное решение для мониторинга открытых интернет-ресурсов и сегментов DarkNet")
 
-# Переключатель логики в зависимости от выбора кейса
-if "вейпов" in selected_case:
-    description = "Перехвачены сообщения в теневом форуме о поставке вейпов. Оплата принималась на крипту, обналичивание происходило через карты банка РК, оформленные на дропов."
-    
-    # Создаем узлы графа схемы (Преступники, кошельки, карты)
-    nodes = [
-        Node(id="DarkNet_Post", label="Пост: Контрабанда Вейпов", size=25, color="#FF4B4B", shape="circle"),
-        Node(id="TG_Bot", label="Telegram: @vape_opt_kz", size=20, color="#1C83E1", shape="circle"),
-        Node(id="Crypto_Wallet", label="USDT: 0x71C...3a9 (Канал вывода)", size=20, color="#FFA500"),
-        Node(id="Drop_Card", label="Карта Дропа: Каспи Банк (ИИН: 0105...)", size=20, color="#FF4B4B"),
-        Node(id="Organizer", label="Организатор схемы (Подозреваемый К.)", size=30, color="#6A0DAD")
-    ]
-    # Связи между ними (как работает схема преступления)
-    edges = [
-        Edge(source="DarkNet_Post", target="TG_Bot", label="Ссылка на контакт"),
-        Edge(source="TG_Bot", target="Crypto_Wallet", label="Прием оплаты"),
-        Edge(source="Crypto_Wallet", target="Drop_Card", label="P2P Вывод в тенге"),
-        Edge(source="Drop_Card", target="Organizer", label="Снятие наличных (Алматы)")
-    ]
-else:
-    description = "На теневом ресурсе обнаружен дамп базы данных граждан РК. Выявлена связь с фишинговым сайтом-двойником."
-    nodes = [
-        Node(id="Leak_Forum", label="Форум: BreachForums", size=25, color="#FF4B4B"),
-        Node(id="Phishing_Site", label="Фишинг: egv-rk.com (Клон eGov)", size=20, color="#FFA500"),
-        Node(id="Server", label="IP: 185.220.X.X (Хостинг)", size=20, color="#1C83E1"),
-        Node(id="Admin_TG", label="Админ фишинга: @hacker_id_rk", size=20, color="#6A0DAD")
-    ]
-    edges = [
-        Edge(source="Leak_Forum", target="Phishing_Site", label="Источник данных"),
-        Edge(source="Phishing_Site", target="Server", label="Размещение"),
-        Edge(source="Server", target="Admin_TG", label="Управление")
-    ]
+st.divider()
 
-# Отрисовка интерфейса
-col1, col2 = st.columns([1, 2])
+# --- БЛОК 1: ВВОД ДАННЫХ И КАТЕГОРИЗАЦИЯ УГРОЗ ---
+st.header("🔍 1. Сбор данных и OSINT-мониторинг")
+
+col1, col2 = st.columns(2)
 
 with col1:
-    st.info(f"**Описание инцидента:**\n\n{description}")
-    st.markdown("---")
-    st.markdown("**Используемые ИИ-алгоритмы:**")
-    st.success("🤖 **Графовая нейросеть (GNN):** Кластеризация связей успешна.")
-    st.success("🤖 **NLP-анализ:** Выделены сущности (ИИН, логины, адреса).")
+    target_input = st.text_input("Введите объект исследования:", placeholder="Никнейм, ID, криптокошелек, телефон или email...")
     
-    st.metric(label="Индекс риска схемы", value="9.2 / 10", delta="Критический уровень")
+    # Жесткие критерии из ТЗ в виде чекбоксов/мультиселекта для симуляции парсинга
+    search_targets = st.multiselect(
+        "Сферы мониторинга (OSINT / DarkNet):",
+        ["Контрабанда (вейпы, алкоголь)", "Наркотические вещества", "Дроп-активность (Дропы)", "Подозрительные криптокошельки", "Утечки баз данных РК"],
+        default=["Контрабанда (вейпы, алкоголь)", "Подозрительные криптокошельки"]
+    )
 
 with col2:
-    st.markdown("### 📊 Автоматически построенная ИИ схема связей (Граф улик)")
+    source_type = st.radio("Сегмент сканирования:", ["Все источники", "ClearWeb (Открытые ресурсы)", "DarkNet сегменты"])
+    start_analysis = st.button("🚀 Запустить приоритизацию угроз", use_container_width=True)
+
+st.divider()
+
+# --- БЛОК 2: АНАЛИЗ И РАБОТА МОДЕЛИ (Валидация MVP) ---
+if start_analysis and target_input:
+    st.header("🧠 2. Оценка рисков и Скоринг модели")
     
-    # Настройки отображения графа (чтобы двигалось и выглядело интерактивно)
-    config = Config(width=800, 
-                    height=500, 
-                    directed=True, 
-                    physics=True, 
-                    hierarchical=False,
-                    nodeHighlightBehavior=True,
-                    highlightColor="#F7A7A7")
+    # Небольшая задержка для симуляции работы парсера и ML-модели
+    with st.spinner("Запуск алгоритмов машинного обучения и сопоставления данных..."):
+        time.sleep(1.5)
     
-    # Запуск интерактивного графа
+    # Показываем риск-сигналы
+    metric_col1, metric_col2, metric_col3 = st.columns(3)
+    with metric_col1:
+        st.metric(label="Индекс риска объекта", value="78 / 100", delta="Критический уровень", delta_color="inverse")
+    with metric_col2:
+        st.metric(label="Найдено цифровых следов", value=f"{len(search_targets) + 2} совпадений")
+    with metric_col3:
+        st.metric(label="Статус в базах утечек РК", value="Обнаружен слив ИИН/Телефонов", delta="-3 утечки")
+
+    # Вывод вердикта твоей модели (тут подключается твой crime_model.pkl)
+    st.error("🚨 **Риск-сигнал:** Обнаружены паттерны незаконной деятельности (связь с теневыми маркетами / дроп-картами).")
+
+    st.divider()
+
+    # --- БЛОК 3: ГРАФОВЫЙ АНАЛИЗ И СКРЫТЫЕ СВЯЗИ ---
+    st.header("📊 3. Автоматизированный графовый анализ связей")
+    st.subheader("Визуализация инфраструктуры объекта")
+    
+    # Твой код графа (замени узел/связи на свои переменные, если они другие)
+    nodes = [
+        Node(id="Target", label=target_input, size=400, color="#FF4B4B"),
+        Node(id="Crypto", label="Crypto Wallet (Подозрительный)", size=250, color="#1F77B4"),
+        Node(id="Darknet", label="DarkNet Forum Activity", size=250, color="#1F77B4"),
+        Node(id="Leak", label="База данных РК (Слив)", size=250, color="#FFAA00"),
+    ]
+    edges = [
+        Edge(source="Target", target="Crypto", label="Транзакции"),
+        Edge(source="Target", target="Darknet", label="Совпадение никнейма"),
+        Edge(source="Target", target="Leak", label="Утечка ИИН"),
+    ]
+    
+    # Оптимальный конфиг: компактный, с физикой, чтобы узлы красиво расталкивались
+    config = Config(width=900, height=500, directed=True, physics=True, hierarchical=False)
+    
+    # Отрисовка графа
     agraph(nodes=nodes, edges=edges, config=config)
+
+elif start_analysis and not target_input:
+    st.warning("⚠️ Пожалуйста, введите объект для исследования (например, никнейм или кошелек).")
+else:
+    st.info("💡 Введите данные объекта выше и нажмите кнопку для построения графа связей и оценки рисков.")
